@@ -2,11 +2,28 @@
 
 # 60-BLAST-RADIUS — titeny-app-kmp
 
-Mengacu: Titeny-TownHall v1.0.0 (https://github.com/Coding-Skuy/Titeny-TownHall/tree/main/versions/v1.0.0).
+Mengacu: Titeny-TownHall v1.0.0 (`https://github.com/Coding-Skuy/Titeny-TownHall/tree/main/platform/versions/v1.0.0`), [`townhall-roadmap.md` bagian 2](https://github.com/Coding-Skuy/ChefGenie-TownHall/blob/main/townhall-roadmap.md) (baris Titeny: point of concern "11 event; MAPE H+1 <= 8%"; batas context "12 komoditas x 8 pasar; read-only ke DB sumber") dan [`KONTEKS-LINTAS-DIVISI.md` bagian 8-9](https://github.com/Coding-Skuy/ChefGenie-TownHall/blob/main/KONTEKS-LINTAS-DIVISI.md).
 
 ## Pernyataan read-only
 
-Repo ini tidak menulis ke DB sumber. Aplikasi analis-desktop tidak pernah membuka koneksi ke DB Lumbung, TitipO, atau Pasaree; satu-satunya tulis adalah aksi kurasi (`validasi`, `tahan`, status rekomendasi) ke API Titeny yang menyimpan ke DB `titeny`, plus cache SQLite lokal analis. Modul `baca-mobile` tidak menulis apa pun.
+Repo ini tidak menulis ke DB sumber. Titeny hanya membaca dari Lumbung, TitipO, dan Pasaree (lewat event/konektor SELECT); satu-satunya basis tulis adalah DB `titeny`.
+
+## Yang BOLEH disentuh repo ini
+
+Modul `analis-desktop` dan `baca-mobile`; skema SQLDelight cache lokal; pemanggilan API Titeny (`/api/v1/analis/validasi`, `/api/v1/analis/tahan`, `/api/v1/rekomendasi/{id}/status`, endpoint baca); token analis di Credential Manager.
+
+## Yang DILARANG
+
+- Menambah koneksi ke DB apa pun (klien tidak punya jalur tulis langsung ke DB).
+- Menghitung ulang harga, grade, atau demand di klien; semua angka dari API.
+- Menambah layar di luar 7 layar terkunci tanpa PRD/FSD versi baru di TownHall.
+- Menyimpan token di berkas teks atau penyimpanan web.
+
+## Kontrak
+
+- **Dikonsumsi**: API Titeny `titeny-backend-service` (baca prediksi/antrean, kontrak `FSD/30-kontrak.md`); token JWT `aud=titeny`, `iss=chefgenie-auth`; token desain dari `titeny-design`.
+- **Diproduksi**: Aksi tulis idempoten `aksi_id` ke `POST /api/v1/analis/validasi` dan `POST /api/v1/analis/tahan`; ubah status rekomendasi; berkas ekspor beraudit (hash SHA-256 dicatat di server). Tidak ada event ke registry 11.
+- Modul bersama `:shared:pantry-resep` adalah milik Pawonee dan tidak dipakai atau diubah oleh Titeny. `pedaree.stok.v1` adalah kontrak bilateral Pedaree-TitipO dan bukan bagian registry Titeny (11 event terkunci).
 
 ## Radius Dampak per Perubahan
 
@@ -17,16 +34,10 @@ Repo ini tidak menulis ke DB sumber. Aplikasi analis-desktop tidak pernah membuk
 | Skema SQLite lokal | Cache dan antre ikut berubah | Batas 500 MB, pangkas FIFO 90 hari, VACUUM Minggu |
 | Token analis | Salah simpan membocorkan akses | Wajib Windows Credential Manager, kedaluwarsa 8 jam + OTP |
 
-## Larangan Eksplisit
-
-- Dilarang menambah koneksi ke DB sumber.
-- Dilarang menghitung ulang harga, grade, atau fee di klien; semua angka memakai respons server.
-- Dilarang menyimpan token di berkas teks atau `localStorage`.
-
 ## Rollback
 
 Setiap rilis menyimpan MSI sebelumnya. Rollback berarti memasang ulang MSI lama dan memverifikasi Masuk → AntreanValidasi plus satu aksi `tahan` duplikat tetap duplikat.
 
 ## Batasan
 
-Batasan dokumen ini: hanya radius repo analis-desktop. Dampak API ada di `titeny-backend-service`, dampak model di `titeny-ai-models`. Insiden DB sumber diteruskan ke pemilik sumber.
+Dokumen ini hanya mengatur radius repo `titeny-app-kmp`. Dampak repo lain ada di dokumen blast-radius repo tersebut. Insiden DB sumber diteruskan ke pemilik sumber.
