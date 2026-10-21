@@ -3,15 +3,25 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.compose.multiplatform)
+    alias(libs.plugins.compose.compiler)
 }
 
 kotlin {
     jvm("desktop")
 
     sourceSets {
+        val desktopTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation(libs.coroutines.test)
+            }
+        }
         val desktopMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
+                implementation(compose.material3)
+                implementation(libs.navigation3.ui)
+                implementation(libs.lifecycle.viewmodel.savedstate)
                 implementation(libs.coroutines.core)
                 implementation(libs.ktor.client.core)
             }
@@ -25,7 +35,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "id.skuy.titeny.analis"
-            packageVersion = "0.1.0"
+            packageVersion = "1.0.0"
             windows {
                 console = false
                 dirChooser = true
